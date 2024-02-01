@@ -1,0 +1,5 @@
+File upload: https://blog.miguelgrinberg.com/post/handling-file-uploads-with-flask
+
+Filepicker: https://pub.dev/packages/file_picker
+
+Image upload: https://kashifchandio.medium.com/upload-images-to-a-rest-api-with-flutter-using-http-61713964e1c

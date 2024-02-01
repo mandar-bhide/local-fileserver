@@ -39,23 +39,36 @@ dependencies:
   path_provider: ^2.1.2
   intl: ^0.19.0
   open_filex: ^4.3.4
+  flutter_image_compress: ^2.1.0
+  file_picker: ^6.1.1
+  file_icon: ^1.0.0
+  qr_code_scanner: ^1.0.1
+  permission_handler: ^11.2.0
+  shared_preferences: ^2.2.2
+  loading_animation_widget: ^1.2.0+4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^2.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
+  fonts:
+  - family: Montserrat
+    fonts:
+      - asset: assets/Montserrat/Montserrat-ExtraBold.ttf
+        weight: 800
+      - asset: assets/Montserrat/Montserrat-Bold.ttf
+        weight: 700
+      - asset: assets/Montserrat/Montserrat-Medium.ttf
+        weight: 600
+      - asset: assets/Montserrat/Montserrat-Regular.ttf
+        weight: 500
+      - asset: assets/Montserrat/Montserrat-Light.ttf
+        weight: 400
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
