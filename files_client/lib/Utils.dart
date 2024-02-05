@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:file_icon/file_icon.dart';
 import 'package:files_client/DirectoryEntry.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -42,15 +40,5 @@ class Utils{
       )]);*/
   }
 
-  static loadIcon(List<String> path, DirectoryEntry entry) async {
-    if(entry.type=="folder") return Icon(CupertinoIcons.folder,size:32,color:const Color(0xFFC84B31));
-    if(entry.name.endsWith(".jpg") || entry.name.endsWith(".jpeg") || entry.name.endsWith(".png")){
-      final dir = (await getTemporaryDirectory()).path;
-      File file = File(dir);
-      final bytes = await FlutterImageCompress.compressWithList(await file.readAsBytes(),minWidth:50,minHeight:50,quality:85);
-      return Image.memory(bytes);
-    }else{
-      return FileIcon(entry.name);
-    }
-  }
+
 }

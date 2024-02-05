@@ -41,7 +41,6 @@ dependencies:
   open_filex: ^4.3.4
   flutter_image_compress: ^2.1.0
   file_picker: ^6.1.1
-  file_icon: ^1.0.0
   qr_code_scanner: ^1.0.1
   permission_handler: ^11.2.0
   shared_preferences: ^2.2.2
@@ -69,6 +68,10 @@ flutter:
         weight: 500
       - asset: assets/Montserrat/Montserrat-Light.ttf
         weight: 400
+
+  - family: Seti
+    fonts:
+      - asset: assets/seti.ttf
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

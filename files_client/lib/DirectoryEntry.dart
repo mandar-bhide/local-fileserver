@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
-import 'package:file_icon/file_icon.dart';
+import 'package:files_client/CustomFileIcon.dart';
 import 'package:files_client/Utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -96,7 +95,7 @@ class DirectoryEntryIcon extends StatelessWidget {
           ?Icon(CupertinoIcons.folder,size:30,color:CustomColors.primaryColor)
           :entry.thumbnail!=null
             ?Image.memory(entry.thumbnail!,width:45)
-            :FileIcon(entry.name,size:30),
+            :Icon(FileIcon(entry.name)),
       )
     );
   }
