@@ -36,15 +36,13 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   http: ^1.1.2
-  path_provider: ^2.1.2
-  intl: ^0.19.0
+  path_provider: ^2.1.2  
   open_filex: ^4.3.4
-  flutter_image_compress: ^2.1.0
   file_picker: ^6.1.1
   qr_code_scanner: ^1.0.1
   permission_handler: ^11.2.0
   shared_preferences: ^2.2.2
-  loading_animation_widget: ^1.2.0+4
+  loading_animation_widget: ^1.2.0+4  
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +70,9 @@ flutter:
   - family: Seti
     fonts:
       - asset: assets/seti.ttf
+  - family: CustomIcon
+    fonts:
+      - asset: assets/icons.ttf
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

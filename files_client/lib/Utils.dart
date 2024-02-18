@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'package:files_client/Colors.dart';
 import 'package:files_client/DirectoryEntry.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart';
 
 class Utils{
   static String formatFileSize(int fileSizeInBytes) {
@@ -24,6 +23,20 @@ class Utils{
     }
   }
 
+  static checkIPandPort(String val){    
+    final RegExp ipRegex =
+        RegExp(r'^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.'
+              r'([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.'
+              r'([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.'
+              r'([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$',);
+    final RegExp portRegex = RegExp(r'^(0|6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]\d{4}|\d{1,4})$');
+    List<String> parts = val.split(':');
+    if (parts.length != 2) {
+      return false; 
+    }
+    return ipRegex.hasMatch(parts[0]) && portRegex.hasMatch(parts[1]);
+  }
+
   static Future<List<DirectoryEntry>> loadMockData() async {
     Future.delayed(const Duration(milliseconds:600));
     return List.empty();
@@ -41,4 +54,20 @@ class Utils{
   }
 
 
+}
+
+class Logo extends StatelessWidget {
+  const Logo({super.key, this.size = 45.0});
+  final double? size;
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text:TextSpan(
+        children: [
+          TextSpan(text:"Home",style:TextStyle(fontWeight:FontWeight.w700,fontSize:size,color:CustomColors.primaryColor.withOpacity(1))),
+          TextSpan(text:"Cloud",style:TextStyle(fontWeight:FontWeight.w700,fontSize:size,color:Colors.black))
+        ]
+      )
+    );
+  }
 }

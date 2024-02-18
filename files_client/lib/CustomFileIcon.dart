@@ -489,6 +489,6 @@ _getIconKey(String filename){
 
 class FileIcon extends IconData{
   final String filename;
-  FileIcon(filename):this.filename=filename.toLowerCase(), super(iconSetMap[_getIconKey(filename)]!);  
+  FileIcon(filename):this.filename=filename.toLowerCase(), super(iconSetMap[_getIconKey(filename)]!,fontFamily: 'Seti');  
 }
 

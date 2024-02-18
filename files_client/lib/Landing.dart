@@ -1,3 +1,5 @@
+import 'package:files_client/Buttons.dart';
+import 'package:files_client/Utils.dart';
 import 'package:files_client/main.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,6 +16,11 @@ class ServerAddressForm extends StatefulWidget {
 }
 
 class _ServerAddressFormState extends State<ServerAddressForm> {
+
+  TextEditingController controller = TextEditingController();
+  bool loading = false;
+  String? invalidAddressMessage;
+
   qrScan() async {
     if(await Permission.camera.status.isGranted){
       Navigator.of(context).push(MaterialPageRoute(
@@ -30,64 +37,103 @@ class _ServerAddressFormState extends State<ServerAddressForm> {
     
   }
 
+  proceed() async {
+    setState(() {
+      loading = true;
+    });
+    print(controller.text.trim());
+    if(Utils.checkIPandPort(controller.text.trim())){
+      if((await http.get(Uri.parse("http://${controller.text.trim()}/test"))).statusCode==200){
+        Future.delayed(Duration(seconds:3),(){
+          setState(() {
+            loading = false;
+            invalidAddressMessage = null;
+          });
+          Navigator.of(context).push(PageRouteBuilder(
+            transitionDuration: Duration(seconds:1),
+            reverseTransitionDuration: Duration(milliseconds:800),
+            pageBuilder: (context,animation,secondaryAnimation)=>MyHomePage(address:controller.text.trim()),
+            transitionsBuilder: (context,animation,secondaryAnimation,child)=>SlideTransition(
+              position: animation.drive(Tween(begin:Offset(1.0,0.0),end:Offset.zero).chain(CurveTween(curve:Curves.easeInOut))),
+              child:child
+            ),
+          )); 
+        });  
+        return;      
+      }else{
+        setState(() {
+          invalidAddressMessage = "Server not responding";
+        });
+      }
+    }else{
+      setState(() {
+        invalidAddressMessage = "Invalid address";
+      });
+    } 
+    setState(() {
+      loading = false;
+    });    
+  }
+  
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body:Container(
-          child:Center(
+        body:SingleChildScrollView(
+          child: Container(
+            height:MediaQuery.of(context).size.height,
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Hero(                      
+                    tag: 'hc',
+                    child: Logo()
+                  ),
+                  SizedBox(height:100),
                   Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: TextField(  
-                      onSubmitted: (val){                        
-                        Navigator.of(context).push(PageRouteBuilder(
-                          pageBuilder: (context,animation,secondaryAnimation)=>MyHomePage(address:val.trim().toString()),
-                          transitionsBuilder: (context,animation,secondaryAnimation,child)=>SlideTransition(
-                            position: animation.drive(Tween(begin:Offset(1.0,0.0),end:Offset.zero)),
-                            child:child
-                          ),
-                        )); 
-                      },                
-                      decoration: InputDecoration(                      
-                        label: Text("Enter valid fileserver URL",style:TextStyle(color:Colors.black)),
-                        border: OutlineInputBorder(borderRadius:BorderRadius.circular(5)),
-                        focusedBorder: OutlineInputBorder(borderRadius:BorderRadius.circular(5),borderSide:BorderSide(color:CustomColors.primaryColor))
+                    padding: const EdgeInsets.all(8),
+                    child: TextField(       
+                      autofocus: false,                                                           
+                      controller: controller,
+                      onSubmitted: (val)=>proceed(),  
+                      decoration: InputDecoration( 
+                        errorText: invalidAddressMessage,                      
+                        filled: true,                     
+                        hintText: "Enter valid fileserver URL",
+                        hintStyle: TextStyle(color:Color(0xFF898989)),
+                        border: InputBorder.none,
+                        focusedBorder: InputBorder.none,                                 
+                        fillColor: Color(0xFFEDEDED),                      
                       ),
                     ),
+                  ),     
+                  SizedBox(height:50),               
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical:12),
+                    child: PrimaryButton(
+                      text: "Continue",
+                      onPressed: ()=>proceed(),
+                    )
                   ),
                   Padding(
-                    padding:EdgeInsets.symmetric(vertical:20),
-                    child: Text("OR",style:TextStyle(fontWeight:FontWeight.w500,fontSize:16))
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical:12,horizontal:48),
-                    child: MaterialButton(
-                      color:CustomColors.primaryColor,
-                      elevation:0,
+                    padding: const EdgeInsets.symmetric(vertical:12),
+                    child: SecondaryButton(
+                      text: "Scan QR Code",
                       onPressed: qrScan,
-                      child:Padding(
-                        padding: const EdgeInsets.symmetric(vertical:10),
-                        child: Row(
-                          mainAxisAlignment:MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.qr_code_rounded,color:Colors.white),
-                            SizedBox(width:12),
-                            Text("Scan QR code",style:TextStyle(fontWeight:FontWeight.w500,color:Colors.white))
-                          ],
-                        ),
-                      )
-                    ),
-                  )
-
+                    )
+                  ),
+                  SizedBox(height:60),
+                  AnimatedOpacity(
+                    opacity: loading?1:0,
+                    duration: Duration(milliseconds:450),
+                    child: LoadingAnimationWidget.threeArchedCircle(color:CustomColors.primaryColor, size:34),
+                  )                
                 ],
-              ),
+              )
             ),
-          )
+          ),
         )
       ),
     );
@@ -113,29 +159,34 @@ class _LandingPageState extends State<LandingPage> {
     final url = instance.getString("baseUrl");
     if(url!=null){
       if((await http.get(Uri.parse("http://${url}/test"))).statusCode==200){
-        Future.delayed(Duration(seconds:5),(){
+        Future.delayed(Duration(seconds:3),(){
           Navigator.of(context).push(PageRouteBuilder(
+            transitionDuration: Duration(seconds:1),
+            reverseTransitionDuration: Duration(seconds:1),
             pageBuilder: (context,animation,secondaryAnimation)=>MyHomePage(address:url),
             transitionsBuilder: (context,animation,secondaryAnimation,child)=>SlideTransition(
               position: animation.drive(Tween(begin:Offset(1.0,0.0),end:Offset.zero)),
               child:child
             ),
           )); 
-        });        
-      }else{
-        instance.clear();
-        Future.delayed(Duration(seconds:5),(){
-          Navigator.of(context).push(PageRouteBuilder(
-            pageBuilder: (context,animation,secondaryAnimation)=>ServerAddressForm(),
-            transitionsBuilder: (context,animation,secondaryAnimation,child)=>SlideTransition(
-              position: animation.drive(Tween(begin:Offset(1.0,0.0),end:Offset.zero)),
-              child:child
-            ),
-          )); 
-        });        
-      }      
+        });  
+        return;      
+      }     
     }
+    instance.clear();
+    Future.delayed(Duration(seconds:3),(){
+      Navigator.of(context).push(PageRouteBuilder(
+        transitionDuration: Duration(seconds:1),
+        reverseTransitionDuration: Duration(seconds:1),
+        pageBuilder: (context,animation,secondaryAnimation)=>ServerAddressForm(),
+        transitionsBuilder: (context,animation,secondaryAnimation,child)=>SlideTransition(
+          position: animation.drive(Tween(begin:Offset(1.0,0.0),end:Offset.zero).chain(CurveTween(curve:Curves.easeInOut))),
+          child:child
+        ),
+      )); 
+    });
   }
+  
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -147,13 +198,9 @@ class _LandingPageState extends State<LandingPage> {
               children: [
                 Text("Welcome to",style:TextStyle(fontWeight:FontWeight.w500,fontSize:22)),
                 SizedBox(height:12),
-                RichText(
-                  text:TextSpan(
-                    children: [
-                      TextSpan(text:"Home",style:TextStyle(fontWeight:FontWeight.w700,fontSize:45,color:CustomColors.primaryColor.withOpacity(1))),
-                      TextSpan(text:"Cloud",style:TextStyle(fontWeight:FontWeight.w700,fontSize:45,color:Colors.black))
-                    ]
-                  )
+                Hero(
+                  tag: 'hc',
+                  child: Logo(),
                 ),
                 SizedBox(height:100),
                 LoadingAnimationWidget.threeArchedCircle(color:CustomColors.primaryColor.withOpacity(1),size:50),

@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:files_client/Colors.dart';
 import 'package:files_client/Landing.dart';
+import 'package:files_client/Utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
@@ -42,9 +44,13 @@ class _MyHomePageState extends State<MyHomePage>{
 
   File? file;    
   List<String> currentPath = [];
-  List<DirectoryEntry> currentDirectory = [];
+  List<DirectoryEntry> currentDirectory = [];  
   final client = http.Client();
   bool? loading;
+  double uploadProgress = 0;
+
+  final sortOptions = ["Name","Modified","Size"];
+  String sortOption = "Name";
 
   @override
   void initState(){
@@ -130,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage>{
     final request = http.MultipartRequest('POST',Uri.parse("http://${widget.address}/upload"));
     request.fields['path'] = currentPath.join('\\');
     request.files.add(await http.MultipartFile.fromPath('file',result!.paths.first!));
-    final response = await client.send(request);
+    final response = await client.send(request);  
     if(response.statusCode==200){
       showFileDialog(true);      
       getDirectory();      
@@ -138,6 +144,34 @@ class _MyHomePageState extends State<MyHomePage>{
       showFileDialog(false);
     }
     Future.delayed(Duration(seconds:2),(){Navigator.of(context).pop();});
+    await FilePicker.platform.clearTemporaryFiles();
+  }
+
+  uploadFileWithProgress() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(      
+      allowCompression: false,      
+    );
+    if(result==null) return;
+    final request = http.MultipartRequest('POST',Uri.parse("http://${widget.address}/upload"));
+    request.fields['path'] = currentPath.join('\\');
+    request.files.add(await http.MultipartFile.fromPath('file',result.paths.first!));
+    
+    final totalLength = request.contentLength;   
+    uploadProgress = 0; 
+    int progress = 0;  
+
+    final response = await request.send();
+          
+  }
+
+  onUploadComplete(http.StreamedResponse response) async {
+    if(response.statusCode==200){
+      showFileDialog(true);      
+      getDirectory();      
+    }else{
+      showFileDialog(false);
+    }
+    Future.delayed(Duration(seconds:3),(){Navigator.of(context).pop();});
     await FilePicker.platform.clearTemporaryFiles();
   }
 
@@ -225,15 +259,16 @@ class _MyHomePageState extends State<MyHomePage>{
         child: Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            title: RichText(
-              text:TextSpan(
-                children: [
-                  TextSpan(text:"Home",style:TextStyle(fontWeight:FontWeight.w700,fontSize:25,color:CustomColors.primaryColor.withOpacity(1))),
-                  TextSpan(text:"Cloud",style:TextStyle(fontWeight:FontWeight.w700,fontSize:25,color:Colors.black))
-                ]
-              )
-            ),
+            title: Logo(size:25),            
             actions: [
+              IconButton(
+                onPressed: getDirectory,
+                icon: Icon(Icons.replay,color:CustomColors.primaryDark)
+              ),
+              IconButton(
+                onPressed: (){},
+                icon: Icon(Icons.qr_code_rounded,color:CustomColors.primaryDark)
+              ),
               IconButton(
                 onPressed: closeServerDialog,
                 icon: Icon(Icons.logout,color:Colors.red.shade700)
@@ -242,7 +277,7 @@ class _MyHomePageState extends State<MyHomePage>{
           ),
           backgroundColor: CustomColors.getBgColor(),
           floatingActionButton: FloatingActionButton(
-            onPressed: uploadFile,
+            onPressed: uploadFileWithProgress,
             child:Icon(Icons.add),
             backgroundColor:CustomColors.primaryColor,
             foregroundColor:Colors.white,
@@ -277,6 +312,7 @@ class _MyHomePageState extends State<MyHomePage>{
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: currentPath.length,
+                          shrinkWrap: true,
                           itemBuilder: (context,index)=>
                             GestureDetector(
                               onTap:(){
@@ -285,30 +321,44 @@ class _MyHomePageState extends State<MyHomePage>{
                                 });
                                 getDirectory();
                               },
-                              child: ClipPath(
-                                clipper: Pentagon(),
-                                child: Center(
-                                  child: Container(
+                              child: Row(
+                                crossAxisAlignment:CrossAxisAlignment.center,
+                                children: [
+                                  index > 0 
+                                    ? Icon(Icons.keyboard_arrow_right_rounded,color:Color(0xFF323232))
+                                    : SizedBox(width:0),
+                                  Container(
                                     decoration: BoxDecoration(
-                                      color: CustomColors.lightLight,
-                                      borderRadius:BorderRadius.circular(5)
+                                      color: CustomColors.primaryColor,
+                                      borderRadius:BorderRadius.circular(8)
                                     ),
-                                    child:Padding(
-                                      padding: EdgeInsets.only(left:8,top:2,bottom:2,right:14),
-                                      child: Text(currentPath[index],
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          color:Colors.black
+                                    child:Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(vertical:2,horizontal:8),
+                                        child: Text(currentPath[index],
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color:Colors.white
+                                          ),
                                         ),
                                       ),
                                     )
                                   ),
-                                ),
-                              ),
+                                ],
+                              )
                             ),
                         )
                       ),
                     )
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical:5,horizontal:5),
+                child: Row(
+                  children: [
+                    
+                                       
                   ],
                 ),
               ),
@@ -340,25 +390,5 @@ class _MyHomePageState extends State<MyHomePage>{
         ),
       ),
     );
-  }
-}
-
-class Pentagon extends CustomClipper<Path>{
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => true;
-
-  @override
-  Path getClip(Size size){
-    Path path = Path();
-    
-    path.moveTo(0,0);
-
-    path.lineTo(0.8*size.width, 0);
-    path.lineTo(size.width, 0.5*size.height);
-    path.lineTo(0.8*size.width, size.height);
-    path.lineTo(0,size.height);
-    path.lineTo(0,0);
-
-    return path;
   }
 }

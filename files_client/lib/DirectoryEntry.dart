@@ -95,7 +95,7 @@ class DirectoryEntryIcon extends StatelessWidget {
           ?Icon(CupertinoIcons.folder,size:30,color:CustomColors.primaryColor)
           :entry.thumbnail!=null
             ?Image.memory(entry.thumbnail!,width:45)
-            :Icon(FileIcon(entry.name)),
+            :Icon(FileIcon(entry.name),color:Colors.white),
       )
     );
   }

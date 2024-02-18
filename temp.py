@@ -1,21 +1,58 @@
-from io import BytesIO
-from PIL import Image
-import base64
+from genericpath import isfile
+import os
+import json
+import uuid
 
-def generate_thumbnail_and_encode(path):
-    original_image = Image.open(path)
-    thumbnail = original_image.copy()
-    thumbnail.thumbnail((80,80))
-    thumbnail_stream = BytesIO()
-    thumbnail.save(thumbnail_stream, format="JPEG")
-    thumbnail_bytes = thumbnail_stream.getvalue()
-    base64_encoded_thumbnail = base64.b64encode(thumbnail_bytes).decode("utf-8")
-    return base64_encoded_thumbnail
+from file_handling import generate_thumbnail_and_encode
 
-# Example usage
-image_path = "files/image.jpg"
-thumbnail_base64 = generate_thumbnail_and_encode(image_path)
+def get_size(path,curr_path=''):
+    if curr_path != '':
+        curr_path += "\\"
+    curr_path += path
+    if os.path.isfile(curr_path):
+        return os.path.getsize(curr_path)  
+    else:
+        size = 0
+        for f in os.listdir(curr_path):
+            size += get_size(f,curr_path=curr_path)
+        return size
 
-# Now you can send `thumbnail_base64` to wherever you need it
-print("Base64 Encoded Thumbnail:")
-print(thumbnail_base64)
+#print(get_size('files'))
+
+def debug_print(text):
+    print(f"[DEBUG] {text}")
+
+def get_dir(path,curr_path=''):
+    if curr_path != '':
+        curr_path += "\\"
+    curr_path += path
+    
+    files = []
+
+    if os.path.isdir(curr_path):
+        return {
+            'id':str(uuid.uuid4()),
+            'name': path,
+            'path': curr_path,
+            'type':'dir',
+            'size':get_size(curr_path),
+            'children':[get_dir(f,curr_path=curr_path) for f in os.listdir(curr_path)]
+        }
+
+    else:    
+        return {
+            'id':str(uuid.uuid4()),
+            'name': path,
+            'path': curr_path,
+            'type':'file',
+            'thumbnail': generate_thumbnail_and_encode(curr_path) if curr_path.endswith('.jpg') or curr_path.endswith('.jpeg') or curr_path.endswith('.png') else None,                
+            'size':get_size(curr_path)
+        }            
+
+
+
+with open('filestrcuture.json','w') as f:
+    f.write(json.dumps(get_dir('files')))
+
+#print(os.listdir("files\\folder\\folder1"))
+
