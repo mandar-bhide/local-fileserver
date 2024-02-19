@@ -2,7 +2,8 @@ from flask import Flask, send_file, request, jsonify, render_template
 import os
 import json
 import socket
-from db import FileEntry, FileDB, generate_thumbnail_and_encode
+from db import FileEntry, FileDB
+from file_handling import FileHandler
 
 app = Flask(__name__)
 ip = socket.gethostbyname(socket.gethostname())
@@ -39,22 +40,7 @@ def upload_file():
         path = request.form.get('path')
         file = request.files['file']           
         if os.path.exists(f"files\\{path}"):
-            thumb = None
-            file.save(f"files\\{path}\\{file.filename}")
-            if file.path.endswith('.jpg') or file.path.endswith('.png') or file.path.endswith('.jpeg'):
-                thumb = generate_thumbnail_and_encode(f"files\\{path}\\{file.filename}") 
-            f = FileEntry.new(
-                name = file.filename,
-                parent_id = path.split("\\")[-1],
-                size = os.path.getsize(f"files\\{path}\\{file.filename}"),
-                thumbnail = thumb,
-                type = "file"
-            )
-            try:
-                FileDB().create_file_entry(f)
-                return jsonify({'inserted_id':f.id}), 200
-            except Exception as e:
-                return jsonify({'error':str(e)}), 500
+            FileHandler().create_file(file=file,path=path)
         print(f"No such directory {path}")
         return "Directory not found",404
     except Exception as e:
