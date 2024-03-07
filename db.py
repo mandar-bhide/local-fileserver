@@ -1,10 +1,12 @@
 from datetime import datetime
+import subprocess
 import uuid
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 
 class FileEntry:    
-   def __init__(self,id,name,type,date_modified,size,thumbnail,date_created,parent_id):
+   def __init__(self,id,name,type,date_modified,size,thumbnail,date_created,parent_id,path):
       self.id = id,
       self.name = name
       self.type = type
@@ -13,9 +15,10 @@ class FileEntry:
       self.thumbnail = thumbnail
       self.date_created = date_created,
       self.parent_id = parent_id
+      self.path = path
 
    staticmethod
-   def new(name,type,parent_id,size=0,thumbnail=None):
+   def new(name,type,parent_id,path,size=0,thumbnail=None):
       now = datetime.now()
       return FileEntry(
          id = str(uuid.uuid4()).replace("-",""),
@@ -25,7 +28,8 @@ class FileEntry:
          date_created = now,
          thumbnail = thumbnail,
          date_modified = now,
-         parent_id = parent_id
+         parent_id = parent_id,
+         path=path
       )     
    
    def to_json(self):
@@ -37,20 +41,22 @@ class FileEntry:
          "date_created" : self.date_created,
          "date_modified" : self.date_modified,
          "thumbnail" : self.thumbnail,
-         "parent_id" : self.parent_id
+         "parent_id" : self.parent_id,
+         "path" : self.path
       }
       
    staticmethod
    def from_db(db_row:list):
       return FileEntry(
-         id = db_row[0],
-         name = db_row[1],
-         parent_id = db_row[2],
-         size = db_row[3],
-         type = db_row[4],
-         thumbnail = db_row[5],
-         date_created = db_row[6],
-         date_modified = db_row[7]
+         id = db_row['id'],
+         name = db_row['display_name'],
+         parent_id = db_row['parent_id'],
+         size = db_row['size'],
+         type = db_row['type'],
+         thumbnail = db_row['thumbnail'],
+         date_created = db_row['date_created'],
+         date_modified = db_row['date_modified'],
+         path = db_row['path']
       )
    
    def __str__(self) -> str:
@@ -59,15 +65,18 @@ class FileEntry:
 class FileDB:
    def __init__(self,tablename="filesystem"):
       self.connection = FileDB.connect()
-      self.cursor = self.connection.cursor()
+      self.cursor = self.connection.cursor(cursor_factory=RealDictCursor)
       self.tablename = tablename
 
    def close(self):
       self.cursor.close()
       self.connection.close()
+      print(subprocess.Popen(['pg_ctl','stop','-D',"F:\\Postgresql\\data"]).wait())
 
    staticmethod
-   def connect():    
+   def connect(): 
+      #TODO Check this line at end   
+      print(subprocess.Popen(['pg_ctl','start','-D',"F:\\Postgresql\\data"]).wait())
       return psycopg2.connect(
          database="fileserver_db", user='postgres', password='mandar', host='127.0.0.1', port= '5432'
       )
@@ -82,10 +91,11 @@ class FileDB:
          file.parent_id,
          file.thumbnail,
          file.date_created,
-         file.date_modified
+         file.date_modified,
+         file.path
       )
       try:
-         self.cursor.execute(f"INSERT INTO {self.tablename} (size,type,id,display_name,parent_id,thumbnail,date_created,date_modified) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",data)
+         self.cursor.execute(f"INSERT INTO {self.tablename} (size,type,id,display_name,parent_id,thumbnail,date_created,date_modified,path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",data)
          if file.type=="file":
             self.cursor.execute(f"UPDATE {self.tablename} SET size=size+%s WHERE id=%s",(file.size,file.parent_id,))
          self.connection.commit()
@@ -98,7 +108,7 @@ class FileDB:
       try:
          self.cursor.execute(f"SELECT * FROM {self.tablename} WHERE parent_id=%s",(directory_id,))
          rows = self.cursor.fetchall()
-         return rows
+         return [FileEntry.from_db(x).to_json() for x in rows]
       except Exception as e:
          print(str(e))
 
@@ -189,6 +199,7 @@ def create_mock_data(db:FileDB):
 if __name__=='__main__':   
    db = FileDB()   
    # DO SOMETHING
+   print(db.get_directory(directory_id="eaad924951744459be64b81c4184bef2"))
    db.close()
    
       
@@ -206,3 +217,4 @@ if __name__=='__main__':
 #  id            | text
 #  date_modified | text
 #  display_name  | text
+#  path  | text

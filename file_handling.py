@@ -1,4 +1,5 @@
 import os
+import shutil
 from werkzeug.datastructures import FileStorage
 from io import BytesIO
 from PIL import Image
@@ -20,7 +21,7 @@ class FileHandler:
     def __init__(self,file_root="files"):
         self.file_root= file_root
 
-    def create_file(self,file:FileStorage,path:str):
+    def create_file(self,file:FileStorage,path:str,db:FileDB):
         thumb = None
         file.save(f"files\\{path}\\{file.filename}")
         if file.path.endswith('.jpg') or file.path.endswith('.png') or file.path.endswith('.jpeg'):
@@ -30,12 +31,22 @@ class FileHandler:
             parent_id = path.split("\\")[-1],
             size = os.path.getsize(f"files\\{path}\\{file.filename}"),
             thumbnail = thumb,
-            type = "file"
+            type = "file",
+            path = path
         )
         try:
-            FileDB().create_file_entry(f)
+            db.create_file_entry(f)
             return jsonify({'inserted_id':f.id}), 200
         except Exception as e:
             return jsonify({'error':str(e)}), 500
+    
+    def delete(self,id:str,db:FileDB):
+        f = db.get_db_entry(id=id)
+        if f.type=='file':
+            db.delete_file(file_id=id)
+            os.remove(f"files\\{f.path}\\{f.name}")
+        elif f.type=='folder':
+            db.delete_directory(directory_id=id)
+            shutil.rmtree(f"files\\{f.path}\\{f.name}")
         
     
